@@ -16,6 +16,7 @@ type AuthService struct {
 
 var ErrInvalidInput = errors.New("invalid input")
 var ErrEmailAlreadyExists = errors.New("email already exists")
+var ErrInvalidCredentials = errors.New("invalid credentials")
 
 func NewAuthService(userRepo *postgres.UserRepository) *AuthService {
 	return &AuthService{
@@ -50,6 +51,27 @@ func (s *AuthService) Register(ctx context.Context, email, plainPassword string)
 
 	if err := s.userRepo.CreateUser(ctx, user); err != nil {
 		return nil, err
+	}
+
+	return user, nil
+}
+
+func (s *AuthService) Login(ctx context.Context, email, plainPassword string) (*domain.User, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	if email == "" || plainPassword == "" {
+		return nil, ErrInvalidInput
+	}
+
+	user, err := s.userRepo.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	if err := security.CheckPassword(user.PasswordHash, plainPassword); err != nil {
+		return nil, ErrInvalidCredentials
 	}
 
 	return user, nil
