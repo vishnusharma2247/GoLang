@@ -8,6 +8,7 @@ import (
 
 	"http-learning/internal/config"
 	"http-learning/internal/repository/postgres"
+	"http-learning/internal/service"
 	httptransport "http-learning/internal/transport/http"
 )
 
@@ -21,7 +22,11 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	mux := httptransport.NewMux()
+	userRepo := postgres.NewUserRepository(dbPool)
+	authService := service.NewAuthService(userRepo)
+	authHandler := httptransport.NewAuthHandler(authService)
+
+	mux := httptransport.NewMux(authHandler)
 
 	server := &http.Server{
 		Addr:    cfg.AppAddr,

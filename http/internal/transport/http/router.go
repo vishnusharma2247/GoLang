@@ -2,7 +2,7 @@ package httptransport
 
 import "net/http"
 
-func NewMux() *http.ServeMux {
+func NewMux(authHandler *AuthHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -15,6 +15,7 @@ func NewMux() *http.ServeMux {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
+	mux.HandleFunc("/register", authHandler.Register)
 
 	return mux
 }
